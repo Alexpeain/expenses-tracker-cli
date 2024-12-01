@@ -11,3 +11,8 @@ python tracker.py summary
 
 
 python tracker.py delete --id <expense_id>
+
+
+python tracker.py summary_month --month 8
+
+

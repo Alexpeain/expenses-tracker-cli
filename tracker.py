@@ -67,7 +67,27 @@ def add(description, amount):
 
     print(f"Expense added successfully (ID: {exp.id})")
     next_id += 1  # Increment the ID for the next expense
+def update_expenses(id, new_description=None, new_amount=None):
+    expenses = load_expenses()
+    if expenses.empty:
+        print("No expenses found.")
+        return 0
 
+    if id not in expenses['ID'].values:
+        print(f"No expense found with ID: {id}")
+        return 0
+
+    #accessing data using loc
+    if new_description:
+        expenses.loc[expenses['ID'] == id, 'Description'] = new_description
+    if new_amount is not None:
+        expenses.loc[expenses['ID'] == id, 'Amount'] = new_amount
+
+    save_expenses(expenses)
+    
+    print(f"Expense updated successfully (ID: {id})")
+    return 1
+        
 def list_expenses():
     expenses = load_expenses()
     if expenses.empty:
@@ -77,6 +97,7 @@ def list_expenses():
         for _, row in expenses.iterrows():
             print(f"{row['ID']: <3} {row['Date']} {row['Description']: <12} ${row['Amount']:.2f}")
 
+
 def summary_expenses():
     expenses = load_expenses()
     if expenses.empty:
@@ -85,6 +106,34 @@ def summary_expenses():
     
     total = expenses['Amount'].sum()
     print(f"Total expenses: ${total:.2f}")
+    return total
+
+#summary of expenses for a specific month
+def summary_expenses_month(month):
+    expenses = load_expenses()
+    if expenses.empty:
+        print("No expense found")
+        return 0
+
+    expenses['Date'] = pd.to_datetime(expenses['Date'])
+
+    filtered_expenses = expenses[expenses['Date'].dt.month == month]
+    
+
+    # Calculate the total amount for the filtered expenses
+    total = filtered_expenses['Amount'].sum()
+
+    # Month name mapping
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+    
+    if total > 0:
+        print(f"Total expenses for {month_names[month - 1]}: ${total:.2f}")
+    else:
+        print(f"No expenses found for {month_names[month - 1]}.")
+    
     return total
 
 def delete_expenses(id):
@@ -123,15 +172,23 @@ def main():
     subparsers.add_parser('list')
 
     # Summary Command does not have additional arguments
-    subparsers.add_parser('summary')
+    summary_parser = subparsers.add_parser('summary')
 
+     # Summary command with month only
+    summary_month_parser = subparsers.add_parser('summary_month', help="Get summary of expenses for a specific month")
+    summary_month_parser.add_argument("--month", required=True, type=int, help="Month to filter expenses (1-12)")
+    
     #delete Command
     delete_parser = subparsers.add_parser('delete', help="Delete an expense by ID")
     delete_parser.add_argument("--id", required=True, type=int, help="ID of the expense to delete")
 
-    
-        
+    #update command
+    update_parser = subparsers.add_parser('update',help = "Update an expense by ID")
+    update_parser.add_argument("--id", required =True, type = int ,help = "ID of the expense to update")
+    update_parser.add_argument("--description", required=False, help="New description of the expense")
+    update_parser.add_argument("--amount", required=False, type=float, help="New amount of the expense")
 
+    
     args = parser.parse_args()
 
     if args.command == "add":
@@ -140,8 +197,20 @@ def main():
         list_expenses()
     elif args.command == "summary":
         summary_expenses()
+    elif args.command == "summary_month":
+        summary_expenses_month(args.month)
     elif args.command == "delete":
         delete_expenses(args.id)
+    elif args.command == "update":
+        # Check if ID is provided
+        if args.id is None:
+            try:
+                args.id = int(input("Please enter the ID of the expense to update: "))
+            except ValueError:
+                print("Invalid ID entered. Please enter a valid number.")
+                return
+        update_expenses(args.id, args.description, args.amount)
+
 
 if __name__ == "__main__":
     main()
