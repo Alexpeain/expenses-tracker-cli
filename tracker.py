@@ -67,6 +67,7 @@ def add(description, amount):
 
     print(f"Expense added successfully (ID: {exp.id})")
     next_id += 1  # Increment the ID for the next expense
+    
 def update_expenses(id, new_description=None, new_amount=None):
     expenses = load_expenses()
     if expenses.empty:
@@ -77,7 +78,7 @@ def update_expenses(id, new_description=None, new_amount=None):
         print(f"No expense found with ID: {id}")
         return 0
 
-    #accessing data using loc
+    #accessing the entire data using loc base on ID column
     if new_description:
         expenses.loc[expenses['ID'] == id, 'Description'] = new_description
     if new_amount is not None:
@@ -192,15 +193,24 @@ def main():
     args = parser.parse_args()
 
     if args.command == "add":
-        add(args.description, args.amount)
+        try:
+            add(args.description, args.amount)
+        except ValueError:
+            print("Error: Please enter a valid number for the amount.")
     elif args.command == "list":
         list_expenses()
     elif args.command == "summary":
         summary_expenses()
     elif args.command == "summary_month":
-        summary_expenses_month(args.month)
+        try:
+            summary_expenses_month(args.month)
+        except ValueError:
+                print("Error: Please enter a valid number for the month.")
     elif args.command == "delete":
-        delete_expenses(args.id)
+        try:
+            delete_expenses(args.id)
+        except ValueError:
+                print("Error: Please enter a valid number for the ID.")
     elif args.command == "update":
         # Check if ID is provided
         if args.id is None:
