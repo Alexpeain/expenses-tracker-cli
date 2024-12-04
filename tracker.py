@@ -11,7 +11,7 @@ def load_expenses():
     if os.path.exists(tracker_csv):
         return pd.read_csv(tracker_csv)
     else:
-        return pd.DataFrame(columns=['ID', 'Date', 'Description', 'Amount'])
+        return pd.DataFrame(columns=['ID', 'Date', 'Description', 'Amount','Category'])
 
 # Save expenses to CSV
 def save_expenses(expenses):
@@ -24,21 +24,23 @@ def load_next_id(expenses):
     return 1
 
 class Tracker:
-    def __init__(self, id, date, description, amount):
+    def __init__(self, id, date, description, amount,category):
         self.id = id
         self.date = date
         self.description = description
         self.amount = amount
+        self.category = category
 
     def to_dict(self):
         return {
             'ID': self.id,
             'Date': self.date.strftime("%Y-%m-%d"),
             'Description': self.description,
-            'Amount': self.amount
+            'Amount': self.amount,
+            'Category': self.category,
         }
 
-def add(description, amount):
+def add(description, amount,category):
     global next_id
     # Load existing expenses to get the current state
     expenses = load_expenses()
@@ -54,7 +56,7 @@ def add(description, amount):
         return
 
     # Create a new expense
-    exp = Tracker(next_id, date, description, amount)
+    exp = Tracker(next_id, date, description, amount, category)
     
     # Convert the new expense to a DataFrame
     new_expense_df = pd.DataFrame([exp.to_dict()])
@@ -68,7 +70,7 @@ def add(description, amount):
     print(f"Expense added successfully (ID: {exp.id})")
     next_id += 1  # Increment the ID for the next expense
     
-def update_expenses(id, new_description=None, new_amount=None):
+def update_expenses(id, new_description=None, new_amount=None ,new_category =None):
     expenses = load_expenses()
     if expenses.empty:
         print("No expenses found.")
@@ -83,6 +85,8 @@ def update_expenses(id, new_description=None, new_amount=None):
         expenses.loc[expenses['ID'] == id, 'Description'] = new_description
     if new_amount is not None:
         expenses.loc[expenses['ID'] == id, 'Amount'] = new_amount
+    if new_category:
+        expenses.loc[expenses['ID'] == id, 'Category'] = new_category
 
     save_expenses(expenses)
     
@@ -94,9 +98,9 @@ def list_expenses():
     if expenses.empty:
         print("No expenses found.")
     else:
-        print("\nID  Date       Description  Amount")
+        print("\nID  Date       Description  Amount  Category")
         for _, row in expenses.iterrows():
-            print(f"{row['ID']: <3} {row['Date']} {row['Description']: <12} ${row['Amount']:.2f}")
+            print(f"{row['ID']: <3} {row['Date']} {row['Description']: <12} ${row['Amount']:.2f} {row['Category']}")
 
 
 def summary_expenses():
@@ -155,7 +159,14 @@ def delete_expenses(id):
     
     print(f"Expense deleted successfully (ID: {id})")
     return 1
-
+def view_category_expenses(category):
+    expenses = load_expenses()
+    filtered_expenses = expenses[expenses['Category'] == category ]
+    if filtered_expenses.empty:
+        print(f"No expenses found in category: {category}.")
+    else:
+        print(filtered_expenses)
+        
 def main():
     global next_id  # Declare next_id as global to modify it
     expenses = load_expenses()  # Load existing expenses
@@ -168,7 +179,7 @@ def main():
     add_parser = subparsers.add_parser('add')
     add_parser.add_argument("--description", required=True, help="Description of the expense")
     add_parser.add_argument("--amount", required=True, type=float, help="Amount of the expense")
-
+    add_parser.add_argument("--category", required=True, help="Category of the expense")
     # List command does not have additional arguments
     subparsers.add_parser('list')
 
@@ -189,12 +200,16 @@ def main():
     update_parser.add_argument("--description", required=False, help="New description of the expense")
     update_parser.add_argument("--amount", required=False, type=float, help="New amount of the expense")
 
+    #category command
+    category_parser = subparsers.add_parser('category',help ="View Category ")
+    category_parser.add_argument("--name", required=True, help="Name of the category to view expenses for")
+
     
     args = parser.parse_args()
 
     if args.command == "add":
         try:
-            add(args.description, args.amount)
+            add(args.description, args.amount,args.category)
         except ValueError:
             print("Error: Please enter a valid number for the amount.")
     elif args.command == "list":
@@ -220,6 +235,8 @@ def main():
                 print("Invalid ID entered. Please enter a valid number.")
                 return
         update_expenses(args.id, args.description, args.amount)
+    elif args.command == "category":
+        view_category_expenses(args.name)
 
 
 if __name__ == "__main__":
