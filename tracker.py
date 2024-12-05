@@ -166,7 +166,12 @@ def view_category_expenses(category):
         print(f"No expenses found in category: {category}.")
     else:
         print(filtered_expenses)
-        
+
+def export_expenses(filename = "exported_expenses.csv"):
+    expenses = load_expenses()
+    expenses.to_csv(filename,index = False)
+    print(f"Expenses exported to {filename}")
+
 def main():
     global next_id  # Declare next_id as global to modify it
     expenses = load_expenses()  # Load existing expenses
@@ -204,6 +209,10 @@ def main():
     category_parser = subparsers.add_parser('category',help ="View Category ")
     category_parser.add_argument("--name", required=True, help="Name of the category to view expenses for")
 
+    # Export command
+    export_parser = subparsers.add_parser('export', help="Export expenses to a CSV file")
+    export_parser.add_argument("--filename", default='exported_expenses.csv', help="Filename for the exported expenses")
+    
     
     args = parser.parse_args()
 
@@ -237,6 +246,9 @@ def main():
         update_expenses(args.id, args.description, args.amount)
     elif args.command == "category":
         view_category_expenses(args.name)
+    elif args.command == "export":
+        export_expenses(args.filename)
+    
 
 
 if __name__ == "__main__":
