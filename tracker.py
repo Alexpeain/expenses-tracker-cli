@@ -159,6 +159,7 @@ def delete_expenses(id):
     
     print(f"Expense deleted successfully (ID: {id})")
     return 1
+
 def view_category_expenses(category):
     expenses = load_expenses()
     filtered_expenses = expenses[expenses['Category'] == category ]
