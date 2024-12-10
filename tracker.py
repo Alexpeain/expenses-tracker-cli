@@ -48,13 +48,20 @@ def add(description, amount,category):
     # Set the current date
     date = datetime.now()
 
+    if not description:
+        print("Error: Description cannot be empty.")
+        return
+    
     # Convert amount to float
     try:
         amount = float(amount)
     except ValueError:
         print("Error: Amount must be a number.")
         return
-
+    if not category:
+        print("Error: Category cannot be empty.")
+        return
+    
     # Create a new expense
     exp = Tracker(next_id, date, description, amount, category)
     
@@ -79,7 +86,16 @@ def update_expenses(id, new_description=None, new_amount=None ,new_category =Non
     if id not in expenses['ID'].values:
         print(f"No expense found with ID: {id}")
         return 0
-
+    if new_amount is not None:
+        try:
+            new_amount = float(new_amount)
+            if new_amount <= 0:
+                print("Error: Amount must be greater than zero.")
+                return
+        except ValueError:
+            print("Error: Amount must be a valid number.")
+            return
+        
     #accessing the entire data using loc base on ID column
     if new_description:
         expenses.loc[expenses['ID'] == id, 'Description'] = new_description
@@ -119,7 +135,11 @@ def summary_expenses_month(month):
     if expenses.empty:
         print("No expense found")
         return 0
-
+    
+    if month < 1 or month > 12:
+        print("Error: Month must be between 1 and 12.")
+        return 0
+    
     expenses['Date'] = pd.to_datetime(expenses['Date'])
 
     filtered_expenses = expenses[expenses['Date'].dt.month == month]
@@ -216,40 +236,43 @@ def main():
     
     
     args = parser.parse_args()
-
-    if args.command == "add":
-        try:
-            add(args.description, args.amount,args.category)
-        except ValueError:
-            print("Error: Please enter a valid number for the amount.")
-    elif args.command == "list":
-        list_expenses()
-    elif args.command == "summary":
-        summary_expenses()
-    elif args.command == "summary_month":
-        try:
-            summary_expenses_month(args.month)
-        except ValueError:
-                print("Error: Please enter a valid number for the month.")
-    elif args.command == "delete":
-        try:
-            delete_expenses(args.id)
-        except ValueError:
-                print("Error: Please enter a valid number for the ID.")
-    elif args.command == "update":
-        # Check if ID is provided
-        if args.id is None:
+    try:
+        if args.command == "add":
             try:
-                args.id = int(input("Please enter the ID of the expense to update: "))
+                add(args.description, args.amount,args.category)
             except ValueError:
-                print("Invalid ID entered. Please enter a valid number.")
-                return
-        update_expenses(args.id, args.description, args.amount)
-    elif args.command == "category":
-        view_category_expenses(args.name)
-    elif args.command == "export":
-        export_expenses(args.filename)
-    
+                print("Error: Please enter a valid number for the amount.")
+        elif args.command == "list":
+            list_expenses()
+        elif args.command == "summary":
+            summary_expenses()
+        elif args.command == "summary_month":
+            try:
+                summary_expenses_month(args.month)
+            except ValueError:
+                    print("Error: Please enter a valid number for the month.")
+        elif args.command == "delete":
+            try:
+                delete_expenses(args.id)
+            except ValueError:
+                    print("Error: Please enter a valid number for the ID.")
+        elif args.command == "update":
+            # Check if ID is provided
+            if args.id is None:
+                try:
+                    args.id = int(input("Please enter the ID of the expense to update: "))
+                except ValueError:
+                    print("Invalid ID entered. Please enter a valid number.")
+                    return
+            update_expenses(args.id, args.description, args.amount)
+        elif args.command == "category":
+            view_category_expenses(args.name)
+        elif args.command == "export":
+            export_expenses(args.filename)
+    except Exception as e:
+        print(f"An error ocurred: {e}")
+        
+        
 
 
 if __name__ == "__main__":
